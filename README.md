@@ -17,8 +17,8 @@
 graph TD
     A[客户端] --> B[FastAPI应用]
     B --> C{路由层}
-    C --> D[/v1/chat/completions POST]
-    C --> E[/v1/models GET]
+    C --> D[v1/chat/completions POST]
+    C --> E[v1/models GET]
     D --> F[InferenceService]
     E --> F
     F --> G[Azure AI SDK]
