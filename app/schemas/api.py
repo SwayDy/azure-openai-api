@@ -2,10 +2,13 @@ from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Union
 
 class CompletionRequest(BaseModel):
+    model: str
     prompt: str
-    max_tokens: int = Field(default=16)
-    temperature: float = Field(default=0.7)
-    top_p: float = Field(default=1.0)
+    max_tokens: int = Field(default=2048)
+    stop: Optional[Union[str, List[str]]] = Field(default=None)
+    stream: bool = Field(default=False)
+    temperature: float = Field(default=0.6)
+    top_p: float = Field(default=0.95)
     
 class ChatMessage(BaseModel):
     role: str
@@ -15,12 +18,11 @@ class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[ChatMessage]
     max_tokens: int = Field(default=2048)
-    temperature: float = Field(default=0.6)
-    top_p: float = Field(default=0.95)
-    n: int = Field(default=1)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
     stream: bool = Field(default=False)
-
+    temperature: float = Field(default=0.6)
+    top_p: float = Field(default=0.95)
+    
     @validator('messages')
     def validate_messages(cls, v):
         if not v:

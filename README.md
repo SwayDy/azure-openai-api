@@ -46,8 +46,7 @@ pip install -r requirements.txt
 ```ini
 AZURE_ENDPOINT=your-azure-endpoint
 AZURE_API_KEY=your-api-key
-MODEL_NAME=DeepSeek-R1
-API_KEY=your-local-api-key
+API_KEY=${API_KEY:-your-local-api-key}
 HOST=0.0.0.0
 PORT=8000
 ```
@@ -59,7 +58,7 @@ uvicorn app.main:app --reload
 
 ### Docker部署
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose.yml --env-file .env up --build
 ```
 
 ## API端点
@@ -78,7 +77,6 @@ docker-compose up --build
 |------------------|------------------------------|----------------------------------------|
 | AZURE_ENDPOINT   | Azure AI服务终结点           | https://your-endpoint.openai.azure.com |
 | AZURE_API_KEY    | Azure API密钥                | your-api-key                           |
-| MODEL_NAME       | 部署的模型名称               | DeepSeek-R1                                  |
 | API_KEY          | 本地API访问密钥              | your-local-key                         |
 | HOST             | 服务监听地址                 | 0.0.0.0                                |
 | PORT             | 服务监听端口                 | 8000                                   |
@@ -90,11 +88,6 @@ docker-compose up --build
 curl http://localhost:8000/health
 ```
 
-### Prometheus指标
-```bash
-curl http://localhost:8000/metrics
-```
-
 ## 使用示例
 
 ### 基础请求
@@ -103,7 +96,7 @@ import requests
 
 API_URL = "http://localhost:8000/v1/chat/completions"
 headers = {
-    "Authorization": "Bearer your-api-key"
+    "Authorization": f"Bearer {os.getenv('API_KEY')}"
 }
 data = {
     "messages": [{"role": "user", "content": "你好"}],
@@ -120,7 +113,7 @@ import requests
 
 API_URL = "http://localhost:8000/v1/chat/completions"
 headers = {
-    "Authorization": "Bearer your-api-key"
+    "Authorization": f"Bearer {os.getenv('API_KEY')}"
 }
 data = {
     "messages": [{"role": "user", "content": "你好"}],

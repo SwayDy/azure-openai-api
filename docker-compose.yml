@@ -1,19 +1,26 @@
-version: '3.8'
+version: '1.0'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - API_KEY=${API_KEY}
-      - AZURE_ENDPOINT=${AZURE_ENDPOINT}
-      - AZURE_API_KEY=${AZURE_API_KEY}
-      - MODEL_NAME=${MODEL_NAME}
+      - API_KEY=${API_KEY:?err}
+      - AZURE_ENDPOINT=${AZURE_ENDPOINT:?err}
+      - AZURE_API_KEY=${AZURE_API_KEY:?err}
+      - LOG_LEVEL=INFO
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app/logs:rw
+      - ./config:/app/config:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 15s
+      timeout: 20s
+      start_period: 10s
       retries: 3
+    restart: unless-stopped
+    labels:
+      - "version=v1.0"

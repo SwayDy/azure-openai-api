@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     api_key: str
     azure_endpoint: str
     azure_api_key: str
-    model_name: str = "DeepSeek-R1"
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "INFO"

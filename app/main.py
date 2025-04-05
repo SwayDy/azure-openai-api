@@ -18,7 +18,6 @@ settings = get_settings()
 inference_service = InferenceService(
     azure_endpoint=settings.azure_endpoint,
     azure_api_key=settings.azure_api_key,
-    model_name=settings.model_name
 )
 
 @app.get("/")

@@ -12,8 +12,7 @@ from typing import List, Dict, AsyncGenerator, Optional, Union
 from ..schemas.api import ChatMessage
 
 class InferenceService:
-    def __init__(self, azure_endpoint: str, azure_api_key: str, model_name: str):
-        self.model_name = model_name
+    def __init__(self, azure_endpoint: str, azure_api_key: str):
         self.logger = logging.getLogger(__name__)
         self.client = ChatCompletionsClient(
             endpoint=azure_endpoint,
@@ -23,13 +22,21 @@ class InferenceService:
         # 预定义的模型列表数据（后续可替换为Azure API调用）
         self.available_models = [
             {
-                "id": model_name,
+                "id": "DeepSeek-R1",
                 "object": "model",
                 "owned_by": "azure-ai",
                 "permission": [
                     {"id": f"modelperm-{uuid.uuid4()}", "object": "model_permission"}
                 ]
-            }
+            },
+            {
+                "id": "DeepSeek-V3",
+                "object": "model",
+                "owned_by": "azure-ai",
+                "permission": [
+                    {"id": f"modelperm-{uuid.uuid4()}", "object": "model_permission"}
+                ]
+            },
         ]
 
     def _convert_messages(self, messages: List[ChatMessage]):
@@ -44,13 +51,16 @@ class InferenceService:
                 azure_messages.append(AssistantMessage(content=msg.content))
         return azure_messages
 
-    async def generate_chat_completion(self, messages: List[ChatMessage],
-                                            max_tokens: int = 2048,
-                                            temperature: float = 0.6,
-                                            top_p: float = 0.95,
-                                            n: int = 1,
-                                            stop: Optional[Union[str, List[str]]] = None,
-                                            stream: bool = False,) -> AsyncGenerator[str, None]:
+    async def generate_chat_completion(
+            self, 
+            model: str,
+            messages: List[ChatMessage],
+            max_tokens: int = 2048,
+            stop: Optional[Union[str, List[str]]] = None,
+            stream: bool = False,
+            temperature: float = 0.6,
+            top_p: float = 0.95,
+        ) -> AsyncGenerator[str, None]:
         try:
             azure_messages = self._convert_messages(messages)
             
@@ -61,12 +71,13 @@ class InferenceService:
                 # 将同步生成器转换为异步生成器
                 sync_generator = await asyncio.to_thread(
                     self.client.complete,
+                    model=model,
                     messages=azure_messages,
                     max_tokens=max_tokens,
+                    stop = stop,
+                    stream=True,
                     temperature=temperature,
                     top_p=top_p,
-                    stream=True,
-                    model=self.model_name
                 )
                 
                 # 异步迭代包装器
@@ -81,15 +92,20 @@ class InferenceService:
                         "id": response_id,
                         "object": "chat.completion.chunk",
                         "created": created,
-                        "model": self.model_name,
+                        "model": model,
                         "choices": [{
                             "index": 0,
                             "delta": {
                                 "role": "assistant",
-                                "content": str(chunk.choices[0].delta.content) if chunk.choices and chunk.choices[0].delta.content else ""
+                                "content": str(chunk.choices[0].delta.content) if chunk.choices and chunk.choices[0].delta.content else "",
                             },
                             "finish_reason": str(chunk.choices[0].finish_reason) if chunk.choices else None
-                        }]
+                        }],
+                        "usage": {
+                            "prompt_tokens": chunk.usage.prompt_tokens,
+                            "completion_tokens": chunk.usage.completion_tokens,
+                            "total_tokens": chunk.usage.total_tokens
+                        } if chunk.usage else {}
                     }
                     yield chunk_data
                     await asyncio.sleep(0)  # 释放事件循环
@@ -97,20 +113,20 @@ class InferenceService:
                 # 非流式响应处理
                 response = await asyncio.to_thread(
                     self.client.complete,
+                    model=model,
                     messages=azure_messages,
                     max_tokens=max_tokens,
+                    stop = stop,
+                    stream=False,
                     temperature=temperature,
                     top_p=top_p,
-                    stream=False,
-                    model=self.model_name
                 )
-
                 # 构造符合OpenAI格式的响应
                 completion_response = {
                     "id": response_id,
                     "object": "chat.completion",
                     "created": created,
-                    "model": self.model_name,
+                    "model": model,
                     "choices": [{
                         "index": 0,
                         "message": {

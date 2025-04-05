@@ -13,7 +13,6 @@ settings = get_settings()
 inference_service = InferenceService(
     azure_endpoint=settings.azure_endpoint,
     azure_api_key=settings.azure_api_key,
-    model_name=settings.model_name
 )
 
 @router.post("/v1/chat/completions")
@@ -24,11 +23,13 @@ async def create_chat_completion(
     if request.stream:
         try:
             generator = inference_service.generate_chat_completion(
+                model=request.model,
                 messages=request.messages,
                 max_tokens=request.max_tokens,
+                stop=request.stop,
+                stream=True,
                 temperature=request.temperature,
                 top_p=request.top_p,
-                stream=request.stream
             )
 
             async def generate():
@@ -56,10 +57,12 @@ async def create_chat_completion(
                 )
     
     generator = inference_service.generate_chat_completion(
+        model=request.model,
         messages=request.messages,
         max_tokens=request.max_tokens,
+        stop=request.stop,
+        stream=False,
         temperature=request.temperature,
         top_p=request.top_p,
-        stream=False,
     )
     return await generator.__anext__()
