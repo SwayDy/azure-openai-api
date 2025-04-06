@@ -19,7 +19,7 @@ inference_service = InferenceService(
 async def create_chat_completion(
     request: ChatCompletionRequest,
     api_key: str = Depends(get_api_key)
-):  
+):
     if request.stream:
         try:
             generator = inference_service.generate_chat_completion(
@@ -35,7 +35,7 @@ async def create_chat_completion(
             async def generate():
                 async for chunk in generator:
                     yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
-
+                yield f"data: [DONE]\n\n"
             return StreamingResponse(
                 generate(),
                 media_type="text/event-stream",
@@ -55,14 +55,14 @@ async def create_chat_completion(
                     media_type="text/event-stream",
                     status_code=500
                 )
-    
-    generator = inference_service.generate_chat_completion(
-        model=request.model,
-        messages=request.messages,
-        max_tokens=request.max_tokens,
-        stop=request.stop,
-        stream=False,
-        temperature=request.temperature,
-        top_p=request.top_p,
-    )
-    return await generator.__anext__()
+    else:
+        generator = inference_service.generate_chat_completion(
+            model=request.model,
+            messages=request.messages,
+            max_tokens=request.max_tokens,
+            stop=request.stop,
+            stream=False,
+            temperature=request.temperature,
+            top_p=request.top_p,
+        )
+        return await generator.__anext__()

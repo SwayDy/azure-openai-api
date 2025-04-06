@@ -55,11 +55,11 @@ class InferenceService:
             self, 
             model: str,
             messages: List[ChatMessage],
-            max_tokens: int = 2048,
-            stop: Optional[Union[str, List[str]]] = None,
-            stream: bool = False,
-            temperature: float = 0.6,
-            top_p: float = 0.95,
+            max_tokens: Optional[int] = None,
+            stop: Optional[List[str]] = None,
+            stream: Optional[bool] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
         ) -> AsyncGenerator[str, None]:
         try:
             azure_messages = self._convert_messages(messages)
@@ -96,16 +96,20 @@ class InferenceService:
                         "choices": [{
                             "index": 0,
                             "delta": {
-                                "role": "assistant",
-                                "content": str(chunk.choices[0].delta.content) if chunk.choices and chunk.choices[0].delta.content else "",
+                                "role": chunk.choices[0].delta.role if chunk.choices and chunk.choices[0].delta.role else "",
+                                "content": chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta.content else "",
+                                "reasoning_content": None,
+                                "tool_calls": None,
                             },
-                            "finish_reason": str(chunk.choices[0].finish_reason) if chunk.choices else None
-                        }],
+                            "logprobs": None,
+                            "finish_reason": chunk.choices[0].finish_reason if chunk.choices else None
+                        }] if chunk.choices else [],
                         "usage": {
                             "prompt_tokens": chunk.usage.prompt_tokens,
                             "completion_tokens": chunk.usage.completion_tokens,
                             "total_tokens": chunk.usage.total_tokens
-                        } if chunk.usage else {}
+                        } if chunk.usage else None,
+                        "system_fingerprint": None,
                     }
                     yield chunk_data
                     await asyncio.sleep(0)  # 释放事件循环
@@ -130,16 +134,18 @@ class InferenceService:
                     "choices": [{
                         "index": 0,
                         "message": {
-                            "role": "assistant",
-                            "content": str(response.choices[0].message.content) if response.choices else ""
+                            "role": response.choices[0].message.role if response.choices else "",
+                            "content": response.choices[0].message.content if response.choices else "",
                         },
-                        "finish_reason": str(response.choices[0].finish_reason) if response.choices else None
-                    }],
+                        "logprobs": None,
+                        "finish_reason": response.choices[0].finish_reason if response.choices else None
+                    }] if response.choices else [],
                     "usage": {
                         "prompt_tokens": response.usage.prompt_tokens,
                         "completion_tokens": response.usage.completion_tokens,
                         "total_tokens": response.usage.total_tokens
-                    } if response.usage else {}
+                    } if response.usage else None,
+                    "system_fingerprint": None,
                 }
                 yield completion_response
         except Exception as e:
@@ -156,7 +162,7 @@ class InferenceService:
                 yield {
                     "error": error_data,
                     "id": response_id,
-                    "model": self.model_name
+                    "model": model
                 }
             else:
                 # 非流式错误响应

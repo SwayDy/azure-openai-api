@@ -44,16 +44,23 @@ pip install -r requirements.txt
 
 3. 创建.env配置文件：
 ```ini
-AZURE_ENDPOINT=your-azure-endpoint
-AZURE_API_KEY=your-api-key
-API_KEY=${API_KEY:-your-local-api-key}
+AZURE_ENDPOINT=${AZURE_ENDPOINT}
+AZURE_API_KEY=${AZURE_API_KEY}
+API_KEY=${API_KEY}
 HOST=0.0.0.0
 PORT=8000
 ```
 
 4. 启动服务：
 ```bash
+python run.py
+# or
 uvicorn app.main:app --reload
+```
+
+### 构建Docker镜像
+```bash
+docker build -t ai-api:latest .
 ```
 
 ### Docker部署
@@ -63,11 +70,8 @@ docker-compose -f docker-compose.yml --env-file .env up --build
 
 ## API端点
 
-- POST /v1/completions - 文本补全
 - POST /v1/chat/completions - 对话补全
 - GET  /v1/models - 获取可用模型列表
-- GET  /health - 健康检查端点
-- GET  /metrics - Prometheus监控指标
 
 ## 配置说明
 
@@ -81,13 +85,6 @@ docker-compose -f docker-compose.yml --env-file .env up --build
 | HOST             | 服务监听地址                 | 0.0.0.0                                |
 | PORT             | 服务监听端口                 | 8000                                   |
 
-## 监控与运维
-
-### 健康检查
-```bash
-curl http://localhost:8000/health
-```
-
 ## 使用示例
 
 ### 基础请求
@@ -96,7 +93,8 @@ import requests
 
 API_URL = "http://localhost:8000/v1/chat/completions"
 headers = {
-    "Authorization": f"Bearer {os.getenv('API_KEY')}"
+    "Authorization": f"Bearer {os.getenv('API_KEY')}",
+    "Content-Type": "application/json",
 }
 data = {
     "messages": [{"role": "user", "content": "你好"}],
@@ -113,7 +111,8 @@ import requests
 
 API_URL = "http://localhost:8000/v1/chat/completions"
 headers = {
-    "Authorization": f"Bearer {os.getenv('API_KEY')}"
+    "Authorization": f"Bearer {os.getenv('API_KEY')}",
+    "Content-Type": "application/json",
 }
 data = {
     "messages": [{"role": "user", "content": "你好"}],
@@ -126,25 +125,3 @@ with requests.post(API_URL, headers=headers, json=data, stream=True) as response
         if line:
             print(line.decode('utf-8'))
 ```
-
-## 开发指南
-
-### 运行测试
-```bash
-pytest test.py
-```
-
-### 代码规范
-- 遵循PEP8规范
-- 使用类型注解
-- 重要函数添加docstring
-
-### 构建Docker镜像
-```bash
-docker build -t ai-api:latest .
-```
-
-### 贡献代码
-1. Fork项目仓库
-2. 创建特性分支
-3. 提交Pull Request

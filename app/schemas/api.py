@@ -4,11 +4,11 @@ from typing import List, Optional, Union
 class CompletionRequest(BaseModel):
     model: str
     prompt: str
-    max_tokens: int = Field(default=2048)
-    stop: Optional[Union[str, List[str]]] = Field(default=None)
-    stream: bool = Field(default=False)
-    temperature: float = Field(default=0.6)
-    top_p: float = Field(default=0.95)
+    max_tokens: Optional[int] = None
+    stop: Optional[List[str]] = None
+    stream: Optional[bool] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
     
 class ChatMessage(BaseModel):
     role: str
@@ -17,11 +17,11 @@ class ChatMessage(BaseModel):
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[ChatMessage]
-    max_tokens: int = Field(default=2048)
-    stop: Optional[Union[str, List[str]]] = Field(default=None)
-    stream: bool = Field(default=False)
-    temperature: float = Field(default=0.6)
-    top_p: float = Field(default=0.95)
+    max_tokens: Optional[int] = None
+    stop: Optional[List[str]] = None
+    stream: Optional[bool] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
     
     @validator('messages')
     def validate_messages(cls, v):
