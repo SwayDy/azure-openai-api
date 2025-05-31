@@ -33,7 +33,7 @@ graph TD
 ### 本地运行
 1. 克隆项目
 ```bash
-git clone https://github.com/your-repo/azure-openai-api.git
+git clone https://github.com/SwayDy/azure-openai-api.git
 cd azure-openai-api
 ```
 
